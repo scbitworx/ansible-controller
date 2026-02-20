@@ -1,0 +1,65 @@
+---
+# --- Controller-owned setup (runs before any roles) ---
+- hosts: all
+  become: true
+  pre_tasks:
+    - name: Install roles from requirements.yml
+      ansible.builtin.command:
+        cmd: ansible-galaxy install -r requirements.yml --force
+      delegate_to: localhost
+      run_once: true
+
+    - name: Deploy ansible-pull wrapper script
+      ansible.builtin.template:
+        src: templates/ansible-pull-wrapper.sh.j2
+        dest: /usr/local/bin/ansible-pull-wrapper
+        owner: root
+        group: root
+        mode: "0755"
+
+# --- Core roles (applied by group) ---
+- hosts: all
+  become: true
+  roles:
+    - scbitworx.base
+
+- hosts: servers
+  become: true
+  roles:
+    - scbitworx.server
+
+- hosts: workstations
+  become: true
+  roles:
+    - scbitworx.workstation
+
+- hosts: laptops
+  become: true
+  roles:
+    - scbitworx.laptop
+
+# --- Host-specific extension roles (examples — will grow over time) ---
+- hosts: jupiter
+  become: true
+  roles:
+    - scbitworx.syncthing_server
+    - scbitworx.taskchampion_sync_server
+
+- hosts: ceres
+  become: true
+  roles:
+    - scbitworx.darp6
+    - scbitworx.devbox
+    - scbitworx.hypervisor
+
+- hosts: mars
+  become: true
+  roles:
+    - scbitworx.devbox
+    - scbitworx.hypervisor
+
+# --- Dotfiles runs last (user-level config, no privilege escalation) ---
+- hosts: all
+  become: false
+  roles:
+    - scbitworx.dotfiles

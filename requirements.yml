@@ -1,0 +1,52 @@
+---
+# All roles pinned to exact tags. This file serves as both the dependency
+# declaration and the lockfile. Versions below are placeholders — update
+# each as roles are implemented and tagged.
+
+roles:
+  # Core roles
+  - name: scbitworx.base
+    src: git+https://github.com/scbitworx/ansible-role-base.git
+    version: v0.1.0
+
+  - name: scbitworx.server
+    src: git+https://github.com/scbitworx/ansible-role-server.git
+    version: v0.1.0
+
+  - name: scbitworx.workstation
+    src: git+https://github.com/scbitworx/ansible-role-workstation.git
+    version: v0.1.0
+
+  - name: scbitworx.laptop
+    src: git+https://github.com/scbitworx/ansible-role-laptop.git
+    version: v0.1.0
+
+  # Extension roles
+  - name: scbitworx.darp6
+    src: git+https://github.com/scbitworx/ansible-role-darp6.git
+    version: v0.1.0
+
+  - name: scbitworx.syncthing_server
+    src: git+https://github.com/scbitworx/ansible-role-syncthing_server.git
+    version: v0.1.0
+
+  - name: scbitworx.taskchampion_sync_server
+    src: git+https://github.com/scbitworx/ansible-role-taskchampion_sync_server.git
+    version: v0.1.0
+
+  - name: scbitworx.devbox
+    src: git+https://github.com/scbitworx/ansible-role-devbox.git
+    version: v0.1.0
+
+  - name: scbitworx.hypervisor
+    src: git+https://github.com/scbitworx/ansible-role-hypervisor.git
+    version: v0.1.0
+
+  - name: scbitworx.intuos_pro
+    src: git+https://github.com/scbitworx/ansible-role-intuos_pro.git
+    version: v0.1.0
+
+  # Dotfiles (runs last)
+  - name: scbitworx.dotfiles
+    src: git+https://github.com/scbitworx/ansible-role-dotfiles.git
+    version: v0.1.0

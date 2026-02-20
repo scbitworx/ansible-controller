@@ -1,0 +1,21 @@
+#!/bin/bash
+set -euo pipefail
+
+LOCK_FILE="/var/lock/ansible-pull.lock"
+LOG_FILE="/var/log/ansible-pull.log"
+REPO="{{ controller_repo_url }}"
+INVENTORY="inventory/hosts.yml"
+PLAYBOOK="local.yml"
+
+# Append all output to the log file with timestamps.
+exec >> "$LOG_FILE" 2>&1
+echo "--- ansible-pull started: $(date --iso-8601=seconds) ---"
+
+# Use flock to prevent parallel runs.
+exec /usr/bin/flock --nonblock "$LOCK_FILE" \
+  /usr/bin/ansible-pull \
+    -U "$REPO" \
+    -i "$INVENTORY" \
+    --limit "$(hostname)" \
+    -o \
+    "$PLAYBOOK"
