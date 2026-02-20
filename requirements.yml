@@ -4,6 +4,11 @@
 # each as roles are implemented and tagged.
 
 roles:
+  # Scaffold (template/reference role)
+  - name: scbitworx.scaffold
+    src: git+https://github.com/scbitworx/ansible-role-scaffold.git
+    version: v0.1.0
+
   # Core roles
   - name: scbitworx.base
     src: git+https://github.com/scbitworx/ansible-role-base.git

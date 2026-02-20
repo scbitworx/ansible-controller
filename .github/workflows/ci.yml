@@ -1,0 +1,64 @@
+---
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install ansible-core yamllint
+
+      - name: Run yamllint
+        run: yamllint -c .yamllint .
+
+  validate:
+    name: Validate inventory
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install ansible-core
+
+      - name: Validate inventory
+        run: ansible-inventory --list -i inventory/hosts.yml > /dev/null
+
+  syntax:
+    name: Syntax check
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install ansible-core
+
+      - name: Syntax check playbook (allow failure until roles exist)
+        run: ansible-playbook --syntax-check local.yml || true
