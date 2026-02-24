@@ -7,7 +7,7 @@ roles:
   # Scaffold (template/reference role)
   - name: scbitworx.scaffold
     src: git+https://github.com/scbitworx/ansible-role-scaffold.git
-    version: v0.1.0
+    version: v0.2.0
 
   # Core roles
   - name: scbitworx.base
