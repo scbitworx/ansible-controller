@@ -1,8 +1,16 @@
 ---
 controller_repo_url: "https://github.com/scbitworx/ansible-controller.git"
 
+# Administrative user accounts to create and configure.
+# Each entry supports: name (required), groups, shell, create_home,
+# authorized_keys, sudo_passwordless.
 base_admin_users:
   - name: bwright
     authorized_keys:
       - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILsiGtctseKpEx7naI3bDooB/WooqfLCz7zJZqMQtWF3"
       - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILfDttmvr3GdW+kOgpARF0aJuOGzKAX9tixwGcQEVKCh cardno:14 812 148"
+    # Per-user defaults (override per entry):
+    #   groups: []
+    #   shell: /bin/bash
+    #   create_home: true
+    #   sudo_passwordless: true
