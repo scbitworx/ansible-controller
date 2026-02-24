@@ -12,7 +12,7 @@ roles:
   # Core roles
   - name: scbitworx.base
     src: git+https://github.com/scbitworx/ansible-role-base.git
-    version: v0.5.0
+    version: v0.6.0
 
   - name: scbitworx.server
     src: git+https://github.com/scbitworx/ansible-role-server.git
