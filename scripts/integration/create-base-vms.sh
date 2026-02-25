@@ -66,7 +66,7 @@ fi
 
 if ! virsh net-info default 2>/dev/null | grep -q "Active:.*yes"; then
   echo "Starting libvirt default network..."
-  virsh net-start default
+  virsh net-start default || true
 fi
 
 # --- Ensure directories exist ---
