@@ -122,8 +122,11 @@ users:
     ssh_authorized_keys:
       - ${SSH_PUBKEY}
 
-# Ensure SSH is enabled
 ssh_pwauth: false
+
+# Enable and start sshd (not enabled by default on Arch cloud image)
+runcmd:
+  - systemctl enable --now sshd
 EOF
 
 SEED_ISO="${VM_DIR}/seed.iso"
