@@ -193,16 +193,20 @@ fi
 echo ""
 echo "=== Step 5: Idempotency check (second run) ==="
 
-# Run ansible-pull-wrapper (deployed by bootstrap) as testadmin with sudo
-echo "Running ansible-pull-wrapper..."
-ssh_vm_user "sudo /usr/local/bin/ansible-pull-wrapper" 2>&1 || true
+# Run ansible-pull directly (not the wrapper, which uses -o/--only-if-changed
+# and would skip the run since the repo hasn't changed since bootstrap)
+echo "Running ansible-pull for idempotency check..."
+PULL_OUTPUT=$(ssh_vm_user "sudo /usr/bin/ansible-pull \
+  -U https://github.com/scbitworx/ansible-controller.git \
+  -d /root/.ansible/pull/test-archlinux \
+  -i inventory/test-hosts.yml \
+  --vault-id scbitworx@/usr/local/bin/ansible-vault-client \
+  --limit test-archlinux \
+  local.yml" 2>&1) || true
+echo "${PULL_OUTPUT}"
 
-# Show wrapper log for debugging
-echo "ansible-pull.log tail:"
-ssh_vm_user "sudo tail -20 /var/log/ansible-pull.log" 2>&1 || true
-
-# Parse the last PLAY RECAP line for changed count
-RECAP_LINE=$(ssh_vm_user "sudo grep 'changed=' /var/log/ansible-pull.log | tail -1" 2>/dev/null) || true
+# Parse the PLAY RECAP line for changed count
+RECAP_LINE=$(echo "${PULL_OUTPUT}" | grep 'changed=' | tail -1)
 if echo "${RECAP_LINE}" | grep -qP 'changed=0\b'; then
   report PASS "Idempotency: second run produced no changes"
 else
