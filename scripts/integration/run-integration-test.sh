@@ -47,8 +47,15 @@ scp_vm() {
 }
 
 get_vm_ip() {
-  virsh domifaddr "${VM_NAME}" 2>/dev/null \
-    | grep -oP '(\d+\.){3}\d+' | head -1
+  local ip=""
+  # Try guest agent first, then DHCP leases
+  ip=$(virsh domifaddr "${VM_NAME}" 2>/dev/null \
+    | grep -oP '(\d+\.){3}\d+' | head -1) || true
+  if [ -z "${ip}" ]; then
+    ip=$(virsh net-dhcp-leases default 2>/dev/null \
+      | grep -oP '(\d+\.){3}\d+' | tail -1) || true
+  fi
+  echo "${ip}"
 }
 
 wait_for_ssh() {
