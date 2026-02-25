@@ -99,6 +99,7 @@ fi
 
 # --- Create VM disk from cloud image ---
 
+mkdir -p "${VM_DIR}"
 echo "Creating VM disk..."
 DISK="${VM_DIR}/${VM_NAME}.qcow2"
 cp "${IMAGE_CACHE}" "${DISK}"
