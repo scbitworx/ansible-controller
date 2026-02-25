@@ -1,27 +1,43 @@
 #!/bin/bash
 # Verify base role state on a test VM after bootstrap/converge.
 #
-# Usage: verify-state.sh <vm-ip> <ssh-key-path>
+# Usage: verify-state.sh <vm-name> <vm-ip> <ssh-key-path>
 #
-# Runs assertions via SSH and reports pass/fail for each check.
+# Uses virsh to run commands on the VM (root SSH is blocked by sshd
+# hardening). Falls back to SSH as testadmin for connectivity checks.
 
 set -euo pipefail
 
-VM_IP="${1:?Usage: verify-state.sh <vm-ip> <ssh-key-path>}"
-SSH_KEY="${2:?Usage: verify-state.sh <vm-ip> <ssh-key-path>}"
+VM_NAME="${1:?Usage: verify-state.sh <vm-name> <vm-ip> <ssh-key-path>}"
+VM_IP="${2:?Usage: verify-state.sh <vm-name> <vm-ip> <ssh-key-path>}"
+SSH_KEY="${3:?Usage: verify-state.sh <vm-name> <vm-ip> <ssh-key-path>}"
 
 PASS=0
 FAIL=0
 
-ssh_vm() {
+# Run a command on the VM via qemu-guest-agent
+vm_run() {
+  local cmd="$1"
+  virsh qemu-agent-command "${VM_NAME}" \
+    "{\"execute\":\"guest-exec\",\"arguments\":{\"path\":\"/bin/bash\",\"arg\":[\"-c\",\"${cmd}\"],\"capture-output\":true}}" 2>/dev/null
+}
+
+# Run a command on the VM via SSH as testadmin
+ssh_testadmin() {
   ssh -i "${SSH_KEY}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-    -o LogLevel=ERROR root@"${VM_IP}" "$@"
+    -o LogLevel=ERROR -o ConnectTimeout=5 testadmin@"${VM_IP}" "$@"
+}
+
+# Run a command on the VM via SSH as root (may fail after hardening)
+ssh_root() {
+  ssh -i "${SSH_KEY}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+    -o LogLevel=ERROR -o ConnectTimeout=5 root@"${VM_IP}" "$@"
 }
 
 check() {
   local desc="$1"
   shift
-  if ssh_vm "$@" &>/dev/null; then
+  if ssh_testadmin "sudo $*" &>/dev/null; then
     echo "  [PASS] ${desc}"
     PASS=$((PASS + 1))
   else
@@ -34,7 +50,7 @@ check_contains() {
   local desc="$1"
   local file="$2"
   local pattern="$3"
-  if ssh_vm "grep -q '${pattern}' '${file}'" &>/dev/null; then
+  if ssh_testadmin "sudo grep -q '${pattern}' '${file}'" &>/dev/null; then
     echo "  [PASS] ${desc}"
     PASS=$((PASS + 1))
   else
@@ -62,6 +78,15 @@ check_contains "PasswordAuthentication no" /etc/ssh/sshd_config "PasswordAuthent
 check_contains "PubkeyAuthentication yes" /etc/ssh/sshd_config "PubkeyAuthentication yes"
 check_contains "PermitEmptyPasswords no" /etc/ssh/sshd_config "PermitEmptyPasswords no"
 check_contains "MaxAuthTries 3" /etc/ssh/sshd_config "MaxAuthTries 3"
+
+# --- Verify root SSH is actually blocked ---
+if ssh_root "true" &>/dev/null; then
+  echo "  [FAIL] Root SSH login is blocked"
+  FAIL=$((FAIL + 1))
+else
+  echo "  [PASS] Root SSH login is blocked"
+  PASS=$((PASS + 1))
+fi
 
 # --- Timezone and locale ---
 check "Timezone symlink exists" test -L /etc/localtime

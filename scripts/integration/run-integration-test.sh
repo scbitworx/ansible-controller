@@ -41,6 +41,11 @@ ssh_vm() {
     -o LogLevel=ERROR root@"${VM_IP}" "$@"
 }
 
+ssh_vm_user() {
+  ssh -i "${SSH_KEY}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+    -o LogLevel=ERROR testadmin@"${VM_IP}" "$@"
+}
+
 scp_vm() {
   scp -i "${SSH_KEY}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
     -o LogLevel=ERROR "$@"
@@ -150,7 +155,7 @@ pass init "${GPG_FPR}"
 REMOTE_SETUP
 
 # Insert the vault password (can't be done in heredoc due to pipe)
-echo "${TEST_VAULT_PASSWORD}" | ssh_vm "pass insert -f scbitworx/vault-password"
+echo "${TEST_VAULT_PASSWORD}" | ssh_vm "pass insert -e scbitworx/vault-password"
 
 echo "Vault setup complete."
 
@@ -175,7 +180,7 @@ fi
 
 echo ""
 echo "=== Step 4: Verifying state ==="
-"${SCRIPT_DIR}/verify-state.sh" "${VM_IP}" "${SSH_KEY}"
+"${SCRIPT_DIR}/verify-state.sh" "${VM_NAME}" "${VM_IP}" "${SSH_KEY}"
 VERIFY_EXIT=$?
 if [ ${VERIFY_EXIT} -eq 0 ]; then
   report PASS "verify-state.sh passed"
@@ -188,14 +193,11 @@ fi
 echo ""
 echo "=== Step 5: Idempotency check (second run) ==="
 
-# Run ansible-pull-wrapper (deployed by bootstrap)
-PULL_OUTPUT=$(ssh_vm "/usr/local/bin/ansible-pull-wrapper" 2>&1) || true
-
-# Check the ansible-pull log for changed tasks
-CHANGED_COUNT=$(ssh_vm "grep -c 'changed=' /var/log/ansible-pull.log | tail -1" 2>/dev/null) || true
+# Run ansible-pull-wrapper (deployed by bootstrap) as testadmin with sudo
+PULL_OUTPUT=$(ssh_vm_user "sudo /usr/local/bin/ansible-pull-wrapper" 2>&1) || true
 
 # Parse the last PLAY RECAP line for changed count
-RECAP_LINE=$(ssh_vm "grep 'changed=' /var/log/ansible-pull.log | tail -1" 2>/dev/null) || true
+RECAP_LINE=$(ssh_vm_user "sudo grep 'changed=' /var/log/ansible-pull.log | tail -1" 2>/dev/null) || true
 if echo "${RECAP_LINE}" | grep -qP 'changed=0\b'; then
   report PASS "Idempotency: second run produced no changes"
 else

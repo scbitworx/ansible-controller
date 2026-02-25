@@ -10,7 +10,7 @@ controller_inventory: "inventory/test-hosts.yml"
 base_admin_users:
   - name: testadmin
     authorized_keys:
-      - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAITestIntegrationKeyAAAAAAAAAAAAAAAAAAAAAAAAAAAA integration-test"
+      - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEWSQ9IzyA1VIB87WSfY1wPk7wz1+VvrLysWMyp3Gu8F integration-test"
     # yamllint disable-line rule:line-length
     password_hash: !vault |
       $ANSIBLE_VAULT;1.2;AES256;scbitworx
