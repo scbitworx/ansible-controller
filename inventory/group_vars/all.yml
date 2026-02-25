@@ -3,7 +3,7 @@ controller_repo_url: "https://github.com/scbitworx/ansible-controller.git"
 
 # Administrative user accounts to create and configure.
 # Each entry supports: name (required), groups, shell, create_home,
-# authorized_keys, sudo_passwordless.
+# authorized_keys, sudo_passwordless, password_hash.
 base_admin_users:
   - name: bwright
     authorized_keys:
@@ -14,3 +14,4 @@ base_admin_users:
     #   shell: /bin/bash
     #   create_home: true
     #   sudo_passwordless: true
+    #   password_hash: <vault-encrypted>  # Generate with ansible-mkpasswd, encrypt with ansible-vault-secret

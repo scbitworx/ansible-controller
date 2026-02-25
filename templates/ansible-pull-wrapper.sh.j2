@@ -1,11 +1,17 @@
 #!/bin/bash
 set -euo pipefail
 
+# Re-exec as root if not already.
+if [ "$(id -u)" -ne 0 ]; then
+  exec sudo "$0" "$@"
+fi
+
 LOCK_FILE="/var/lock/ansible-pull.lock"
 LOG_FILE="/var/log/ansible-pull.log"
 REPO="{{ controller_repo_url }}"
 INVENTORY="inventory/hosts.yml"
 PLAYBOOK="local.yml"
+VAULT_CLIENT="/usr/local/bin/ansible-vault-client"
 
 # Append all output to the log file with timestamps.
 exec >> "$LOG_FILE" 2>&1
@@ -16,6 +22,7 @@ exec /usr/bin/flock --nonblock "$LOCK_FILE" \
   /usr/bin/ansible-pull \
     -U "$REPO" \
     -i "$INVENTORY" \
+    --vault-id "scbitworx@${VAULT_CLIENT}" \
     --limit "$(hostname)" \
     -o \
     "$PLAYBOOK"

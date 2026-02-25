@@ -1,0 +1,23 @@
+#!/bin/sh
+# {{ ansible_managed }}
+# Ansible Vault password client — retrieves the vault password from pass.
+# Used by: ansible-pull --vault-id scbitworx@/usr/local/bin/ansible-vault-client
+
+set -eu
+
+if ! command -v pass >/dev/null 2>&1; then
+  echo "ERROR: 'pass' is not installed" >&2
+  exit 1
+fi
+
+if ! command -v gpg >/dev/null 2>&1; then
+  echo "ERROR: 'gpg' is not installed" >&2
+  exit 1
+fi
+
+PASSWORD=$(pass scbitworx/vault-password 2>/dev/null) || {
+  echo "ERROR: Failed to retrieve scbitworx/vault-password from pass" >&2
+  exit 1
+}
+
+printf '%s' "$PASSWORD"

@@ -1,0 +1,36 @@
+#!/bin/sh
+# {{ ansible_managed }}
+# Decrypt and display a vault-encrypted variable from a YAML file.
+# Usage: ansible-vault-reveal <variable_name> <yaml_file>
+
+set -eu
+
+VAULT_CLIENT="/usr/local/bin/ansible-vault-client"
+
+if [ $# -ne 2 ]; then
+  echo "Usage: ansible-vault-reveal <variable_name> <yaml_file>" >&2
+  exit 1
+fi
+
+VARIABLE_NAME="$1"
+YAML_FILE="$2"
+
+if ! command -v ansible >/dev/null 2>&1; then
+  echo "ERROR: 'ansible' is not installed" >&2
+  exit 1
+fi
+
+if [ ! -x "$VAULT_CLIENT" ]; then
+  echo "ERROR: Vault client not found at $VAULT_CLIENT" >&2
+  exit 1
+fi
+
+if [ ! -f "$YAML_FILE" ]; then
+  echo "ERROR: File not found: $YAML_FILE" >&2
+  exit 1
+fi
+
+ansible localhost -m debug \
+  -a "var=${VARIABLE_NAME}" \
+  -e "@${YAML_FILE}" \
+  --vault-id "scbitworx@${VAULT_CLIENT}"

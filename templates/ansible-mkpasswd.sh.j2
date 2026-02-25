@@ -1,0 +1,38 @@
+#!/bin/sh
+# {{ ansible_managed }}
+# Generate a SHA-512 password hash for /etc/shadow.
+# The password is read interactively and never appears in the process list.
+
+set -eu
+
+if ! command -v openssl >/dev/null 2>&1; then
+  echo "ERROR: 'openssl' is not installed" >&2
+  exit 1
+fi
+
+# Prompt for password (hidden input)
+printf 'Password: ' >&2
+stty -echo
+read -r PASSWORD
+stty echo
+printf '\n' >&2
+
+if [ -z "$PASSWORD" ]; then
+  echo "ERROR: Password cannot be empty" >&2
+  exit 1
+fi
+
+# Confirm password
+printf 'Confirm password: ' >&2
+stty -echo
+read -r PASSWORD_CONFIRM
+stty echo
+printf '\n' >&2
+
+if [ "$PASSWORD" != "$PASSWORD_CONFIRM" ]; then
+  echo "ERROR: Passwords do not match" >&2
+  exit 1
+fi
+
+# Generate SHA-512 hash (password via stdin, never in process list)
+printf '%s' "$PASSWORD" | openssl passwd -6 -rounds 500000 -stdin

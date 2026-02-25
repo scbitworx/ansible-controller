@@ -15,10 +15,27 @@ under the `scbitworx` GitHub organization, pinned to exact versions in
 
 - Ansible (installed via `scripts/bootstrap.sh` or manually)
 - Git
+- `pass` (password-store) with an initialized store
+- `gpg` with a valid key pair
+- Pass entry `scbitworx/vault-password` containing the Ansible Vault password
 
 ## Bootstrap (First Run)
 
-On a fresh host, run the bootstrap script as root:
+Before running the bootstrap script, set up the vault prerequisites:
+
+```bash
+# Install pass and gpg (if not already installed)
+# Arch: pacman -S pass gnupg
+# Debian/Ubuntu: apt-get install pass gnupg
+
+# Initialize the pass store (if not already done)
+pass init <your-gpg-key-id>
+
+# Add the vault password
+pass insert scbitworx/vault-password
+```
+
+Then run the bootstrap script as root:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/scbitworx/ansible-controller/main/scripts/bootstrap.sh | sudo bash
@@ -32,18 +49,33 @@ cd ansible-controller
 sudo bash scripts/bootstrap.sh
 ```
 
+The bootstrap script checks that `pass`, `gpg`, and the vault password entry
+exist before proceeding. It deploys an inline vault client for the first run;
+subsequent runs use the templated version at `/usr/local/bin/ansible-vault-client`.
+
 After the first run, the `ansible-pull-wrapper` script is deployed to
 `/usr/local/bin/` for subsequent invocations.
 
 ## Manual Invocation
 
-After bootstrap, run the wrapper as root:
+After bootstrap, run the wrapper (it re-execs as root via sudo automatically):
 
 ```bash
-sudo /usr/local/bin/ansible-pull-wrapper
+/usr/local/bin/ansible-pull-wrapper
 ```
 
 Output is logged to `/var/log/ansible-pull.log`.
+
+## Vault Helper Scripts
+
+The playbook deploys four helper scripts to `/usr/local/bin/`:
+
+| Script | Purpose |
+|--------|---------|
+| `ansible-vault-client` | Retrieves the vault password from `pass`. Used by `--vault-id` |
+| `ansible-vault-secret` | Encrypts a string as a vault variable. Usage: `ansible-vault-secret <var_name> <value>` |
+| `ansible-vault-reveal` | Decrypts a variable from a YAML file. Usage: `ansible-vault-reveal <var_name> <file>` |
+| `ansible-mkpasswd` | Generates SHA-512 password hashes interactively (hidden input, confirm) |
 
 ## Repository Structure
 
@@ -57,6 +89,10 @@ ansible-controller/
     integration/                     # Integration testing (Milestone 8)
   templates/
     ansible-pull-wrapper.sh.j2       # Wrapper script template
+    ansible-vault-client.sh.j2       # Vault password client (pass backend)
+    ansible-vault-secret.sh.j2       # Encrypt-a-string helper
+    ansible-vault-reveal.sh.j2       # Decrypt-and-display helper
+    ansible-mkpasswd.sh.j2           # Interactive password hash generator
   inventory/
     hosts.yml                        # Host inventory
     group_vars/                      # Group-level variables

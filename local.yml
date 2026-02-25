@@ -17,6 +17,38 @@
         group: root
         mode: "0755"
 
+    - name: Deploy ansible-vault-client script
+      ansible.builtin.template:
+        src: templates/ansible-vault-client.sh.j2
+        dest: /usr/local/bin/ansible-vault-client
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Deploy ansible-vault-secret script
+      ansible.builtin.template:
+        src: templates/ansible-vault-secret.sh.j2
+        dest: /usr/local/bin/ansible-vault-secret
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Deploy ansible-vault-reveal script
+      ansible.builtin.template:
+        src: templates/ansible-vault-reveal.sh.j2
+        dest: /usr/local/bin/ansible-vault-reveal
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Deploy ansible-mkpasswd script
+      ansible.builtin.template:
+        src: templates/ansible-mkpasswd.sh.j2
+        dest: /usr/local/bin/ansible-mkpasswd
+        owner: root
+        group: root
+        mode: "0755"
+
 # --- Core roles (applied by group) ---
 - hosts: all
   become: true
