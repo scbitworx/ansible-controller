@@ -13,7 +13,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TESTDATA_DIR="${SCRIPT_DIR}/testdata"
-WORK_DIR="${TESTDATA_DIR}/vm"
+VM_DIR="/var/lib/libvirt/images/integration-test"
 VM_NAME="test-archlinux"
 IMAGE_URL="https://geo.mirror.pkgbuild.com/images/latest/Arch-Linux-x86_64-cloudimg.qcow2"
 IMAGE_CACHE="${TESTDATA_DIR}/Arch-Linux-x86_64-cloudimg.qcow2"
@@ -71,7 +71,7 @@ fi
 
 # --- Ensure directories exist ---
 
-mkdir -p "${TESTDATA_DIR}" "${WORK_DIR}"
+mkdir -p "${TESTDATA_DIR}" "${VM_DIR}"
 
 # --- Generate test SSH keypair (if not present) ---
 
@@ -100,14 +100,14 @@ fi
 # --- Create VM disk from cloud image ---
 
 echo "Creating VM disk..."
-DISK="${WORK_DIR}/${VM_NAME}.qcow2"
+DISK="${VM_DIR}/${VM_NAME}.qcow2"
 cp "${IMAGE_CACHE}" "${DISK}"
 qemu-img resize "${DISK}" "${DISK_SIZE}"
 
 # --- Create cloud-init seed ISO ---
 
 echo "Creating cloud-init seed ISO..."
-SEED_DIR="${WORK_DIR}/seed"
+SEED_DIR="${VM_DIR}/seed"
 mkdir -p "${SEED_DIR}"
 
 cat > "${SEED_DIR}/meta-data" << EOF
@@ -126,7 +126,7 @@ users:
 ssh_pwauth: false
 EOF
 
-SEED_ISO="${WORK_DIR}/seed.iso"
+SEED_ISO="${VM_DIR}/seed.iso"
 
 "${MKISO}" -output "${SEED_ISO}" -volid cidata -joliet -rock \
   "${SEED_DIR}/user-data" "${SEED_DIR}/meta-data"
