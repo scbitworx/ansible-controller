@@ -1,0 +1,6 @@
+---
+# Test inventory for integration testing with disposable VMs.
+# This file is used by integration test scripts — never for production.
+all:
+  hosts:
+    test-archlinux:

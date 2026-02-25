@@ -9,7 +9,7 @@ fi
 LOCK_FILE="/var/lock/ansible-pull.lock"
 LOG_FILE="/var/log/ansible-pull.log"
 REPO="{{ controller_repo_url }}"
-INVENTORY="inventory/hosts.yml"
+INVENTORY="{{ controller_inventory | default('inventory/hosts.yml') }}"
 PLAYBOOK="local.yml"
 VAULT_CLIENT="/usr/local/bin/ansible-vault-client"
 

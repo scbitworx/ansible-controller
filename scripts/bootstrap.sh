@@ -3,6 +3,16 @@ set -euo pipefail
 
 REPO="https://github.com/scbitworx/ansible-controller.git"
 VAULT_CLIENT="/usr/local/bin/ansible-vault-client"
+INVENTORY="inventory/hosts.yml"
+
+# --- Parse optional arguments ---
+
+while getopts "i:" opt; do
+  case "$opt" in
+    i) INVENTORY="$OPTARG" ;;
+    *) echo "Usage: $0 [-i inventory_path]" >&2; exit 1 ;;
+  esac
+done
 
 # --- Prerequisite checks ---
 
@@ -52,7 +62,7 @@ chmod 755 "$VAULT_CLIENT"
 
 ansible-pull \
   -U "$REPO" \
-  -i inventory/hosts.yml \
+  -i "$INVENTORY" \
   --vault-id "scbitworx@${VAULT_CLIENT}" \
   --limit "$(hostname)" \
   local.yml

@@ -55,43 +55,23 @@
   roles:
     - scbitworx.base
 
-- hosts: servers
-  become: true
-  roles:
-    - scbitworx.server
-
-- hosts: workstations
-  become: true
-  roles:
-    - scbitworx.workstation
-
-- hosts: laptops
-  become: true
-  roles:
-    - scbitworx.laptop
-
-# --- Host-specific extension roles (examples — will grow over time) ---
-- hosts: jupiter
-  become: true
-  roles:
-    - scbitworx.syncthing_server
-    - scbitworx.taskchampion_sync_server
-
-- hosts: ceres
-  become: true
-  roles:
-    - scbitworx.darp6
-    - scbitworx.devbox
-    - scbitworx.hypervisor
-
-- hosts: mars
-  become: true
-  roles:
-    - scbitworx.devbox
-    - scbitworx.hypervisor
-
-# --- Dotfiles runs last (user-level config, no privilege escalation) ---
-- hosts: all
-  become: false
-  roles:
-    - scbitworx.dotfiles
+# --- Future plays added as roles are implemented ---
+# - hosts: servers
+#   become: true
+#   roles:
+#     - scbitworx.server
+#
+# - hosts: workstations
+#   become: true
+#   roles:
+#     - scbitworx.workstation
+#
+# - hosts: laptops
+#   become: true
+#   roles:
+#     - scbitworx.laptop
+#
+# - hosts: all
+#   become: false
+#   roles:
+#     - scbitworx.dotfiles
