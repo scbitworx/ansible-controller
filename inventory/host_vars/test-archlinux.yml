@@ -5,6 +5,7 @@
 # This password protects nothing real — it exists solely to validate
 # the vault decryption pipeline.
 
+controller_repo_url: "https://github.com/scbitworx/ansible-controller.git"
 controller_inventory: "inventory/test-hosts.yml"
 
 base_admin_users:

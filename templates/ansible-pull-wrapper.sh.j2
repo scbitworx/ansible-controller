@@ -23,6 +23,6 @@ exec /usr/bin/flock --nonblock "$LOCK_FILE" \
     -U "$REPO" \
     -i "$INVENTORY" \
     --vault-id "scbitworx@${VAULT_CLIENT}" \
-    --limit "$(hostname)" \
+    --limit "$(cat /etc/hostname 2>/dev/null || cat /proc/sys/kernel/hostname)" \
     -o \
     "$PLAYBOOK"
