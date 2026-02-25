@@ -194,7 +194,12 @@ echo ""
 echo "=== Step 5: Idempotency check (second run) ==="
 
 # Run ansible-pull-wrapper (deployed by bootstrap) as testadmin with sudo
-PULL_OUTPUT=$(ssh_vm_user "sudo /usr/local/bin/ansible-pull-wrapper" 2>&1) || true
+echo "Running ansible-pull-wrapper..."
+ssh_vm_user "sudo /usr/local/bin/ansible-pull-wrapper" 2>&1 || true
+
+# Show wrapper log for debugging
+echo "ansible-pull.log tail:"
+ssh_vm_user "sudo tail -20 /var/log/ansible-pull.log" 2>&1 || true
 
 # Parse the last PLAY RECAP line for changed count
 RECAP_LINE=$(ssh_vm_user "sudo grep 'changed=' /var/log/ansible-pull.log | tail -1" 2>/dev/null) || true
