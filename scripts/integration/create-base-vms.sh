@@ -1,11 +1,11 @@
 #!/bin/bash
 # Create a disposable Arch Linux VM for integration testing.
 #
-# Prerequisites: libvirt, qemu, virt-install, genisoimage (cdrtools on Arch)
+# Prerequisites: libvirt, qemu, virt-install, guestfs-tools
 #
 # This script is idempotent — it destroys any existing test-archlinux VM
 # before creating a new one. The VM uses the official Arch Linux cloud image
-# and cloud-init for initial configuration.
+# with virt-customize for initial configuration (root SSH key, sshd).
 #
 # IMPORTANT: This VM is for testing only. Never run against production hosts.
 
@@ -24,18 +24,9 @@ VCPUS=2
 # --- Preflight: verify all required tools are available ---
 
 MISSING=()
-for cmd in virsh virt-install qemu-img curl ssh ssh-keygen; do
+for cmd in virsh virt-install virt-customize virt-resize qemu-img curl ssh ssh-keygen; do
   command -v "${cmd}" &>/dev/null || MISSING+=("${cmd}")
 done
-
-# Check for genisoimage or mkisofs
-if command -v genisoimage &>/dev/null; then
-  MKISO=genisoimage
-elif command -v mkisofs &>/dev/null; then
-  MKISO=mkisofs
-else
-  MISSING+=("genisoimage/mkisofs (install cdrtools on Arch, genisoimage on Debian/Ubuntu)")
-fi
 
 if [ ${#MISSING[@]} -gt 0 ]; then
   echo "ERROR: Missing required tools:" >&2
@@ -67,6 +58,16 @@ fi
 if ! virsh net-info default 2>/dev/null | grep -q "Active:.*yes"; then
   echo "Starting libvirt default network..."
   virsh net-start default || true
+fi
+
+# --- Ensure virbr0 forwarding rules exist (Docker's FORWARD policy is drop) ---
+
+if command -v nft &>/dev/null; then
+  if ! nft list chain ip filter FORWARD 2>/dev/null | grep -q 'iif "virbr0" accept'; then
+    echo "Adding nftables forwarding rules for virbr0..."
+    nft insert rule ip filter FORWARD iif "virbr0" accept
+    nft insert rule ip filter FORWARD oif "virbr0" ct state established,related accept
+  fi
 fi
 
 # --- Ensure directories exist ---
@@ -102,38 +103,27 @@ fi
 mkdir -p "${VM_DIR}"
 echo "Creating VM disk..."
 DISK="${VM_DIR}/${VM_NAME}.qcow2"
-cp "${IMAGE_CACHE}" "${DISK}"
-qemu-img resize "${DISK}" "${DISK_SIZE}"
+qemu-img create -f qcow2 "${DISK}" "${DISK_SIZE}"
 
-# --- Create cloud-init seed ISO ---
+# Resize cloud image into the new disk, expanding the root partition
+# Arch cloud image layout: sda1=BIOS boot, sda2=EFI, sda3=root
+echo "Expanding root partition to fill ${DISK_SIZE}..."
+virt-resize --expand /dev/sda3 "${IMAGE_CACHE}" "${DISK}"
 
-echo "Creating cloud-init seed ISO..."
-SEED_DIR="${VM_DIR}/seed"
-mkdir -p "${SEED_DIR}"
+# --- Customize disk image (replaces cloud-init) ---
 
-cat > "${SEED_DIR}/meta-data" << EOF
-instance-id: ${VM_NAME}
-local-hostname: ${VM_NAME}
-EOF
+echo "Customizing disk image..."
+virt-customize -a "${DISK}" \
+  --root-password password:test-root-pw \
+  --write /etc/hostname:"${VM_NAME}" \
+  --ssh-inject root:file:"${SSH_KEY}.pub" \
+  --run-command "systemctl enable sshd" \
+  --run-command "systemctl disable systemd-time-wait-sync.service" \
+  --write /etc/systemd/network/20-wired.network:'[Match]
+Name=en* eth*
 
-cat > "${SEED_DIR}/user-data" << EOF
-#cloud-config
-users:
-  - name: root
-    ssh_authorized_keys:
-      - ${SSH_PUBKEY}
-
-ssh_pwauth: false
-
-# Enable and start sshd (not enabled by default on Arch cloud image)
-runcmd:
-  - systemctl enable --now sshd
-EOF
-
-SEED_ISO="${VM_DIR}/seed.iso"
-
-"${MKISO}" -output "${SEED_ISO}" -volid cidata -joliet -rock \
-  "${SEED_DIR}/user-data" "${SEED_DIR}/meta-data"
+[Network]
+DHCP=yes'
 
 # --- Create the VM ---
 
@@ -143,7 +133,6 @@ virt-install \
   --memory "${MEMORY}" \
   --vcpus "${VCPUS}" \
   --disk "${DISK},format=qcow2" \
-  --disk "${SEED_ISO},device=cdrom" \
   --import \
   --os-variant archlinux \
   --network default \
@@ -192,12 +181,6 @@ if [ -z "${VM_IP}" ] || [ ${WAITED} -ge ${MAX_WAIT} ]; then
 fi
 
 echo "VM is accessible at ${VM_IP}"
-
-# --- Wait for cloud-init to finish ---
-
-echo "Waiting for cloud-init to complete..."
-ssh -i "${SSH_KEY}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-  root@"${VM_IP}" "cloud-init status --wait" 2>/dev/null
 
 # --- Take clean snapshot ---
 
