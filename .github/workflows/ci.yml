@@ -42,7 +42,9 @@ jobs:
         run: pip install ansible-core
 
       - name: Validate inventory
-        run: ansible-inventory --list -i inventory/hosts.yml > /dev/null
+        run: |
+          printf '[defaults]\n' > ci-ansible.cfg
+          ANSIBLE_CONFIG=ci-ansible.cfg ansible-inventory --list -i inventory/hosts.yml > /dev/null
 
   syntax:
     name: Syntax check
@@ -61,4 +63,6 @@ jobs:
         run: pip install ansible-core
 
       - name: Syntax check playbook (allow failure until roles exist)
-        run: ansible-playbook --syntax-check local.yml || true
+        run: |
+          printf '[defaults]\n' > ci-ansible.cfg
+          ANSIBLE_CONFIG=ci-ansible.cfg ansible-playbook --syntax-check -i inventory/hosts.yml local.yml || true
