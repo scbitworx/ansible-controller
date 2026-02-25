@@ -5,9 +5,10 @@
   pre_tasks:
     - name: Install roles from requirements.yml
       ansible.builtin.command:
-        cmd: ansible-galaxy install -r requirements.yml --force
+        cmd: ansible-galaxy install -r requirements.yml
       delegate_to: localhost
       run_once: true
+      changed_when: false
 
     - name: Deploy ansible-pull wrapper script
       ansible.builtin.template:
