@@ -79,8 +79,20 @@ ssh_pwauth: false
 EOF
 
 SEED_ISO="${WORK_DIR}/seed.iso"
-genisoimage -output "${SEED_ISO}" -volid cidata -joliet -rock \
-  "${SEED_DIR}/user-data" "${SEED_DIR}/meta-data" 2>/dev/null
+
+# Use genisoimage or mkisofs (cdrtools on Arch provides mkisofs)
+if command -v genisoimage &>/dev/null; then
+  MKISO=genisoimage
+elif command -v mkisofs &>/dev/null; then
+  MKISO=mkisofs
+else
+  echo "ERROR: Neither genisoimage nor mkisofs found." >&2
+  echo "Install cdrtools (Arch) or genisoimage (Debian/Ubuntu)." >&2
+  exit 1
+fi
+
+"${MKISO}" -output "${SEED_ISO}" -volid cidata -joliet -rock \
+  "${SEED_DIR}/user-data" "${SEED_DIR}/meta-data"
 
 # --- Create the VM ---
 
