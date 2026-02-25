@@ -12,4 +12,8 @@ roles:
   # Core roles
   - name: scbitworx.base
     src: git+https://github.com/scbitworx/ansible-role-base.git
-    version: v0.15.1
+    version: v0.15.2
+
+collections:
+  - name: ansible.posix
+  - name: community.general

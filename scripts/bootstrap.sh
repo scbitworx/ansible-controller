@@ -36,11 +36,11 @@ fi
 
 # --- Install Ansible if not present (distro-aware) ---
 
-if ! command -v ansible-pull &>/dev/null; then
+if ! command -v ansible-pull &>/dev/null || ! command -v git &>/dev/null; then
   if command -v pacman &>/dev/null; then
-    pacman -Syu --noconfirm ansible
+    pacman -Syu --noconfirm ansible git
   elif command -v apt-get &>/dev/null; then
-    apt-get update && apt-get install -y ansible
+    apt-get update && apt-get install -y ansible git
   fi
 fi
 
@@ -58,11 +58,31 @@ printf '%s' "$PASSWORD"
 INLINE_CLIENT
 chmod 755 "$VAULT_CLIENT"
 
+# --- Pre-clone and install roles ---
+
+# Resolve hostname without requiring inetutils
+THIS_HOST=$(cat /etc/hostname 2>/dev/null || cat /proc/sys/kernel/hostname)
+
+# ansible-pull does not install Galaxy roles automatically.
+# Clone the repo first so we can run ansible-galaxy install.
+PULL_DIR="${HOME}/.ansible/pull/${THIS_HOST}"
+if [ -d "${PULL_DIR}" ]; then
+  git -C "${PULL_DIR}" pull
+else
+  git clone "$REPO" "${PULL_DIR}"
+fi
+
+if [ -f "${PULL_DIR}/requirements.yml" ]; then
+  ansible-galaxy role install -r "${PULL_DIR}/requirements.yml" --force
+  ansible-galaxy collection install -r "${PULL_DIR}/requirements.yml" --force
+fi
+
 # --- Run the initial ansible-pull ---
 
 ansible-pull \
   -U "$REPO" \
+  -d "${PULL_DIR}" \
   -i "$INVENTORY" \
   --vault-id "scbitworx@${VAULT_CLIENT}" \
-  --limit "$(hostname)" \
+  --limit "${THIS_HOST}" \
   local.yml
