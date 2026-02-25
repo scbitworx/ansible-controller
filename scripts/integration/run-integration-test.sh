@@ -19,6 +19,21 @@ INVENTORY="inventory/test-hosts.yml"
 PASS=0
 FAIL=0
 
+# --- Preflight: verify required tools ---
+
+MISSING=()
+for cmd in virsh ssh scp; do
+  command -v "${cmd}" &>/dev/null || MISSING+=("${cmd}")
+done
+
+if [ ${#MISSING[@]} -gt 0 ]; then
+  echo "ERROR: Missing required tools:" >&2
+  for tool in "${MISSING[@]}"; do
+    echo "  - ${tool}" >&2
+  done
+  exit 1
+fi
+
 # --- Helper functions ---
 
 ssh_vm() {

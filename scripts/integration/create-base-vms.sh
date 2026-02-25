@@ -21,6 +21,30 @@ DISK_SIZE="10G"
 MEMORY=2048
 VCPUS=2
 
+# --- Preflight: verify all required tools are available ---
+
+MISSING=()
+for cmd in virsh virt-install qemu-img curl ssh ssh-keygen; do
+  command -v "${cmd}" &>/dev/null || MISSING+=("${cmd}")
+done
+
+# Check for genisoimage or mkisofs
+if command -v genisoimage &>/dev/null; then
+  MKISO=genisoimage
+elif command -v mkisofs &>/dev/null; then
+  MKISO=mkisofs
+else
+  MISSING+=("genisoimage/mkisofs (install cdrtools on Arch, genisoimage on Debian/Ubuntu)")
+fi
+
+if [ ${#MISSING[@]} -gt 0 ]; then
+  echo "ERROR: Missing required tools:" >&2
+  for tool in "${MISSING[@]}"; do
+    echo "  - ${tool}" >&2
+  done
+  exit 1
+fi
+
 # --- Ensure directories exist ---
 
 mkdir -p "${TESTDATA_DIR}" "${WORK_DIR}"
@@ -79,17 +103,6 @@ ssh_pwauth: false
 EOF
 
 SEED_ISO="${WORK_DIR}/seed.iso"
-
-# Use genisoimage or mkisofs (cdrtools on Arch provides mkisofs)
-if command -v genisoimage &>/dev/null; then
-  MKISO=genisoimage
-elif command -v mkisofs &>/dev/null; then
-  MKISO=mkisofs
-else
-  echo "ERROR: Neither genisoimage nor mkisofs found." >&2
-  echo "Install cdrtools (Arch) or genisoimage (Debian/Ubuntu)." >&2
-  exit 1
-fi
 
 "${MKISO}" -output "${SEED_ISO}" -volid cidata -joliet -rock \
   "${SEED_DIR}/user-data" "${SEED_DIR}/meta-data"
