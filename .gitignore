@@ -10,3 +10,4 @@ scripts/integration/testdata/id_ed25519
 scripts/integration/testdata/id_ed25519.pub
 scripts/integration/testdata/vm/
 scripts/integration/testdata/Arch-Linux-x86_64-cloudimg.qcow2
+scripts/integration/integration-test.log

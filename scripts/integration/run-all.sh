@@ -8,8 +8,8 @@
 #   2. Create the test VM (if not present, or --recreate)
 #   3. Run the integration test
 #
-# Output is teed to /workspace/integration-test.log so it can be read
-# from the Claude Code container for debugging.
+# Output is teed to scripts/integration/integration-test.log so it can
+# be read from any environment that shares the repo checkout.
 #
 # Options:
 #   --recreate    Destroy and recreate the VM before testing
@@ -17,7 +17,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-LOG_FILE="/workspace/integration-test.log"
+LOG_FILE="${SCRIPT_DIR}/integration-test.log"
 RECREATE=false
 
 for arg in "$@"; do
