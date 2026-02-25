@@ -92,9 +92,9 @@ fi
 check "Timezone symlink exists" test -L /etc/localtime
 
 # --- Base packages ---
-check "git is installed" command -v git
-check "vim is installed" command -v vim
-check "curl is installed" command -v curl
+check "git is installed" which git
+check "vim is installed" which vim
+check "curl is installed" which curl
 
 # --- ansible-pull timer ---
 check "ansible-pull.service unit exists" \
@@ -111,8 +111,13 @@ check "ansible-pull-wrapper exists" test -x /usr/local/bin/ansible-pull-wrapper
 check "ansible-vault-client exists" test -x /usr/local/bin/ansible-vault-client
 
 # --- Unattended-upgrades should NOT be present on Arch ---
-check "unattended-upgrades not installed (Arch)" \
-  "! pacman -Qi unattended-upgrades 2>/dev/null"
+if ssh_testadmin "pacman -Qi unattended-upgrades" &>/dev/null; then
+  echo "  [FAIL] unattended-upgrades not installed (Arch)"
+  FAIL=$((FAIL + 1))
+else
+  echo "  [PASS] unattended-upgrades not installed (Arch)"
+  PASS=$((PASS + 1))
+fi
 
 # --- Summary ---
 echo ""
