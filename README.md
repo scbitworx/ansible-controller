@@ -86,7 +86,7 @@ ansible-controller/
   requirements.yml                   # Role version pins (lockfile)
   scripts/
     bootstrap.sh                     # First-run bootstrap
-    integration/                     # Integration testing (Milestone 8)
+    integration/                     # Integration testing (see below)
   templates/
     ansible-pull-wrapper.sh.j2       # Wrapper script template
     ansible-vault-client.sh.j2       # Vault password client (pass backend)
@@ -106,6 +106,92 @@ ansible-controller/
 | ceres    | Laptop  | Arch Linux | workstations, laptops |
 | mars     | Desktop | Arch Linux | workstations          |
 | jupiter  | Server  | Arch Linux | servers               |
+
+## Integration Testing
+
+Integration tests validate the full controller pipeline end-to-end on
+disposable libvirt VMs. Tests are **never** run against production hosts.
+
+### Prerequisites
+
+Install the following on your workstation:
+
+- `libvirt`, `qemu` — VM hypervisor
+- `virt-install`, `virt-customize`, `virt-resize` — VM provisioning tools
+- `qemu-img` — disk image management
+- `cdrtools` (Arch) or `genisoimage` (Debian/Ubuntu) — cloud-init seed ISO
+- `nftables` — firewall (for Docker FORWARD chain workaround)
+
+On Arch Linux:
+
+```bash
+pacman -S libvirt qemu-full virt-install guestfs-tools qemu-img cdrtools nftables
+```
+
+### Setup
+
+Generate the test GPG key (one-time, committed to the repo):
+
+```bash
+scripts/integration/generate-test-gpg-key.sh
+```
+
+Create the test VM (downloads the Arch cloud image on first run):
+
+```bash
+scripts/integration/create-base-vms.sh
+```
+
+This creates a `test-archlinux` VM on the default NAT network (`virbr0`),
+injects a test SSH key, and takes a `clean` snapshot for test isolation.
+
+### Running Tests
+
+Run the full test suite:
+
+```bash
+scripts/integration/run-all.sh
+```
+
+Or run individual steps:
+
+```bash
+# Revert to clean snapshot, bootstrap, verify, and check idempotency
+scripts/integration/run-integration-test.sh
+
+# Run only the 22-assertion state verification
+scripts/integration/verify-state.sh
+```
+
+### What Gets Tested
+
+The test pipeline runs three checks:
+
+1. **Bootstrap** — `bootstrap.sh` installs Ansible and runs the initial pull
+   against `inventory/test-hosts.yml`
+2. **State verification** — 22 assertions covering admin user, SSH hardening,
+   timezone, base packages, ansible-pull timer, vault scripts, and
+   distro-specific behavior
+3. **Idempotency** — a second `ansible-pull` run produces zero changes
+
+### Test Isolation
+
+Each test run reverts the VM to its `clean` snapshot, ensuring a fresh
+starting state. The VM can be destroyed and recreated at any time with
+`create-base-vms.sh`.
+
+Test artifacts are stored in `scripts/integration/testdata/`:
+
+- `test-gpg-key.asc` — test-only GPG key (committed, protects nothing real)
+- `id_ed25519` / `id_ed25519.pub` — test SSH keypair
+- `Arch-Linux-x86_64-cloudimg.qcow2` — cached cloud image (gitignored)
+
+### Docker + libvirt Note
+
+Docker's FORWARD chain can drop `virbr0` traffic. `create-base-vms.sh` adds
+nftables forwarding rules automatically, but they do not persist across
+reboots. If VM networking stops working after a reboot, re-run
+`create-base-vms.sh`.
 
 ## Design Documentation
 
