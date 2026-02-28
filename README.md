@@ -79,7 +79,7 @@ The playbook deploys four helper scripts to `/usr/local/bin/`:
 
 ## Repository Structure
 
-```
+```text
 ansible-controller/
   ansible.cfg                        # Ansible configuration
   local.yml                          # Main playbook
@@ -112,7 +112,7 @@ ansible-controller/
 Integration tests validate the full controller pipeline end-to-end on
 disposable libvirt VMs. Tests are **never** run against production hosts.
 
-### Prerequisites
+### Prerequisites (Workstation)
 
 Install the following on your workstation:
 
