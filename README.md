@@ -70,12 +70,12 @@ Output is logged to `/var/log/ansible-pull.log`.
 
 The playbook deploys four helper scripts to `/usr/local/bin/`:
 
-| Script | Purpose |
-|--------|---------|
-| `ansible-vault-client` | Retrieves the vault password from `pass`. Used by `--vault-id` |
+| Script                 | Purpose                                                                                 |
+| ---------------------- | --------------------------------------------------------------------------------------- |
+| `ansible-vault-client` | Retrieves the vault password from `pass`. Used by `--vault-id`                          |
 | `ansible-vault-secret` | Encrypts a string as a vault variable. Usage: `ansible-vault-secret <var_name> <value>` |
-| `ansible-vault-reveal` | Decrypts a variable from a YAML file. Usage: `ansible-vault-reveal <var_name> <file>` |
-| `ansible-mkpasswd` | Generates SHA-512 password hashes interactively (hidden input, confirm) |
+| `ansible-vault-reveal` | Decrypts a variable from a YAML file. Usage: `ansible-vault-reveal <var_name> <file>`   |
+| `ansible-mkpasswd`     | Generates SHA-512 password hashes interactively (hidden input, confirm)                 |
 
 ## Repository Structure
 
